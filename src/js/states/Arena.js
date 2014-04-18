@@ -1,6 +1,6 @@
 /* global GameCtrl */
 /* global game */
-
+'use strict';
 // font size
 var FONT = 32;
  
@@ -13,16 +13,43 @@ var ACTORS = 10;
 
 var Screen = [];
 
-// a list of all actors; 0 is the player
+// a list of all actors; i0 is the player
 var player;
 var actorList;
  
 // points to each actor in its position, for quick searching
 var actorMap;
 
+function TileSquare(game,xPos,yPos){
+	this.game=game;
+	this.text=null;
+	this.sprite=null;
+	this.spritebg= null;
+	
+	this.xPos=xPos;
+	this.yPos=yPos;
+}
+
+TileSquare.prototype.createText=function(_char){
+	var style = { font: FONT + 'px monospace', fill:'#fff'};
+	this.spritebg= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
+	this.text=this.game.add.text(32*this.xPos, 32*this.yPos, _char, style);
+	this.spritebg.frame=34;
+	
+	return this;
+};
+
+TileSquare.prototype.setText=function(_char){
+	if(_char=='#'){
+		this.sprite= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
+		var f=[17,22,23];
+		this.sprite.frame=f[Math.floor((Math.random()*3))];
+	}else{
+		this.text.setText(_char);
+	}
+};
 
 (function(){
-	'use strict';
 	GameCtrl.Arena = function () {
 
 			//        When a State is added to Phaser it automatically has the following properties set on it, even if they already exist:
@@ -54,12 +81,11 @@ var actorMap;
 			this.input.keyboard.addCallbacks(null, null, this.onKeyUp);
 			Map.initMap();
 	
-			var style = { font: FONT + 'px monospace', fill:'#fff'};
 			for (var y = 0; y < ROWS; y++) {
 				var newRow = [];
 				Screen.push(newRow);
 				for (var x = 0; x < COLS; x++){
-					newRow.push(this.add.text(FONT*0.6*x, FONT*y, ' ', style));
+					newRow.push(new TileSquare(this, x, y).createText());
 				}
 			}
 			Map.drawMap();
@@ -106,6 +132,8 @@ var actorMap;
 
 	var Map={
 		tiles:[],
+		wall:null,
+		firstDraw:true,
 		initMap: function() {
 			// create a new random map
 			this.tiles = [];
@@ -115,7 +143,7 @@ var actorMap;
 					if (Math.random() > 0.8){
 						newRow.push('#');
 					}else{
-						newRow.push('.');
+						newRow.push(' ');
 					}
 				}
 				this.tiles.push(newRow);
@@ -124,9 +152,14 @@ var actorMap;
 		drawMap:function() {
 			for (var y = 0; y < ROWS; y++){
 				for (var x = 0; x < COLS; x++){
+					if(!this.firstDraw && Map.tiles[y][x]==='#') continue;
+					
 					Screen[y][x].setText(Map.tiles[y][x]);
+					
 				}
 			}
+								this.firstDraw=false;
+
 		},
 		drawActors:function() {
 			for (var a=0;a<actorList.length;a++) {
@@ -141,7 +174,7 @@ var actorMap;
 				actor.x+dir.x <= COLS - 1 &&
 				actor.y+dir.y >= 0 &&
 				actor.y+dir.y <= ROWS - 1 &&
-				Map.tiles[actor.y+dir.y][actor.x +dir.x] === '.';
+				Map.tiles[actor.y+dir.y][actor.x +dir.x] === ' ';
 		}
 	};
 

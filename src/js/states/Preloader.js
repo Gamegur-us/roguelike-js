@@ -33,6 +33,8 @@
 			//  This is how you load fonts
 			//this.load.bitmapFont('caslon', 'assets/fonts/caslon.png', 'assets/fonts/caslon.xml');
 
+			this.load.spritesheet('forest-tiles', 'assets/images/foresttiles_0.png', 32, 32);
+
 		},
 
 		create: function () {
