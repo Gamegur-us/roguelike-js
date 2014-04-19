@@ -36,6 +36,7 @@ TileSquare.prototype.createText=function(){
 	return this;
 };
 
+
 TileSquare.prototype.setObstacle=function(){
 	var sprite=this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
 	var f=[17,22,23];
@@ -339,3 +340,4 @@ TileSquare.prototype.setObstacle=function(){
 		return array;
 	}
 }());
+
