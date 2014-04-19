@@ -1,8 +1,6 @@
 /* global GameCtrl */
 /* global game */
 'use strict';
-// font size
-var FONT = 32;
  
 // map dimensions
 var ROWS = 10;
@@ -23,30 +21,23 @@ var actorMap;
 function TileSquare(game,xPos,yPos){
 	this.game=game;
 	this.text=null;
-	this.sprite=null;
 	this.spritebg= null;
 	
 	this.xPos=xPos;
 	this.yPos=yPos;
 }
 
-TileSquare.prototype.createText=function(_char){
-	var style = { font: FONT + 'px monospace', fill:'#fff'};
+TileSquare.prototype.createText=function(){
 	this.spritebg= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
-	this.text=this.game.add.text(32*this.xPos, 32*this.yPos, _char, style);
 	this.spritebg.frame=34;
 	
 	return this;
 };
 
-TileSquare.prototype.setText=function(_char){
-	if(_char=='#'){
-		this.sprite= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
-		var f=[17,22,23];
-		this.sprite.frame=f[Math.floor((Math.random()*3))];
-	}else{
-		this.text.setText(_char);
-	}
+TileSquare.prototype.setObstacle=function(){
+	var sprite=this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
+	var f=[17,22,23];
+	sprite.frame=f[Math.floor((Math.random()*3))];
 };
 
 (function(){
@@ -89,24 +80,24 @@ TileSquare.prototype.setText=function(_char){
 				}
 			}
 			Map.drawMap();
-			initActors();
+			initActors(this);
 	
-			Map.drawActors();
+			
+
 		},
 		update: function () {
+			this.add.sprite('hero');
 		},
 		render: function(){
 			// debug stuff
 		},
 		onKeyUp: function(event) {
-			// draw map to overwrite previous actors positions
-			Map.drawMap();
-
+			
 			var acted=false;
 
 			// act on player input
 			if(event.keyCode===Phaser.Keyboard.LEFT) {
-				acted=moveTo(player, {x:-1, y:0});
+					acted=moveTo(player, {x:-1, y:0});
 			} else if(event.keyCode===Phaser.Keyboard.RIGHT) {
 				acted=moveTo(player,{x:1, y:0});
 			} else if(event.keyCode===Phaser.Keyboard.UP) {
@@ -124,15 +115,11 @@ TileSquare.prototype.setText=function(_char){
 					aiAct(enemy);
                 }
 			}
-
-			// draw actors in new positions
-			Map.drawActors();
 		}
 	};
 
 	var Map={
 		tiles:[],
-		wall:null,
 		firstDraw:true,
 		initMap: function() {
 			// create a new random map
@@ -152,22 +139,15 @@ TileSquare.prototype.setText=function(_char){
 		drawMap:function() {
 			for (var y = 0; y < ROWS; y++){
 				for (var x = 0; x < COLS; x++){
-					if(!this.firstDraw && Map.tiles[y][x]==='#') continue;
+					if(Map.tiles[y][x]!=='#'){
+						continue;
+					}
 					
-					Screen[y][x].setText(Map.tiles[y][x]);
+					Screen[y][x].setObstacle(Map.tiles[y][x]);
 					
 				}
 			}
-								this.firstDraw=false;
 
-		},
-		drawActors:function() {
-			for (var a=0;a<actorList.length;a++) {
-				if (actorList[a].hp > 0){
-					var sprite=(a === 0) ? player.hp : 'e';
-					Screen[actorList[a].y][actorList[a].x].setText(sprite);
-				}
-			}
 		},
 		canGo:function (actor,dir) {
 			return  actor.x+dir.x >= 0 &&
@@ -184,6 +164,7 @@ TileSquare.prototype.setText=function(_char){
 		if (!Map.canGo(actor,dir)){
 			return false;
 		}
+
  
 		// moves actor to the new location
 		var newKey = (actor.y + dir.y) +'_' + (actor.x + dir.x);
@@ -195,6 +176,7 @@ TileSquare.prototype.setText=function(_char){
 
 			// if it's dead remove its reference
 			if (victim.hp === 0) {
+				victim.sprite.kill();
 				delete actorMap[newKey];
 				actorList.splice(actorList.indexOf(victim), 1);
 				if(victim!==player) {
@@ -210,8 +192,19 @@ TileSquare.prototype.setText=function(_char){
 			delete actorMap[actor.y + '_' + actor.x];
 
 			// update position
-			actor.y+=dir.y;
-			actor.x+=dir.x;
+			actor.setXY(actor.x+dir.x,actor.y+dir.y);
+			//if(actor.isPlayer){
+			if(dir.x===1){
+				actor.sprite.frame=2;
+			}else if(dir.x===-1){
+				actor.sprite.frame=3;
+			}else if(dir.y===-1){
+				actor.sprite.frame=1;
+			}else if(dir.y===1){
+				actor.sprite.frame=0;
+			}
+			//}
+			
 
 			// add reference to the actor's new position
 			actorMap[actor.y + '_' + actor.x]=actor;
@@ -222,20 +215,58 @@ TileSquare.prototype.setText=function(_char){
 	function randomInt(max) {
 		return Math.floor(Math.random() * max);
 	}
+
  
-	function initActors() {
+	function Player(game,x,y){
+		this.hp=3;
+		this.x=x;
+		this.y=y;
+		this.isPlayer=true;
+		this.sprite=game.add.sprite(x*32,y*32,'hero');
+
+	}
+
+	Player.prototype.setXY=function(x,y){
+		this.x=x;
+		this.y=y;
+		this.sprite.x=x*32;
+		this.sprite.y=y*32;
+	};
+
+	function Enemy(game,x,y){
+		this.hp=1;
+		this.x=x;
+		this.y=y;
+		this.isPlayer=false;
+		this.sprite=game.add.sprite(x*32,y*32,'orc');
+		this.sprite.x=x*32;
+		this.sprite.y=y*32;
+	}
+
+	Enemy.prototype.setXY=function(x,y){
+		this.x=x;
+		this.y=y;
+		this.sprite.x=x*32;
+		this.sprite.y=y*32;
+	};
+
+
+	function initActors(game) {
 		// create actors at random locations
 		actorList = [];
 		actorMap = {};
+		var actor;
 		for (var e=0; e<ACTORS; e++) {
 			// create new actor
-			var actor = { x:0, y:0, hp:e === 0?3:1 };
 			
+			
+			actor=(e===0)? new Player(game,0,0) :new Enemy(game,0,0);			
+
 			do {
 				// pick a random position that is both a floor and not occupied
-				actor.y=randomInt(ROWS);
-				actor.x=randomInt(COLS);
-			
+				var x=randomInt(COLS),y=randomInt(ROWS);
+				actor.setXY(x,y);
+					
 			} while ( Map.tiles[actor.y][actor.x] === '#' || actorMap[actor.y + '_' + actor.x] );
 
 			// add references to the actor to the actors list & map

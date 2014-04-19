@@ -34,6 +34,8 @@
 			//this.load.bitmapFont('caslon', 'assets/fonts/caslon.png', 'assets/fonts/caslon.xml');
 
 			this.load.spritesheet('forest-tiles', 'assets/images/foresttiles_0.png', 32, 32);
+			this.load.spritesheet('hero', 'assets/images/hero.png', 32, 32);
+			this.load.spritesheet('orc', 'assets/images/orc.png', 32, 32);
 
 		},
 
