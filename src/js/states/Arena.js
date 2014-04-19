@@ -173,13 +173,18 @@ TileSquare.prototype.setObstacle=function(){
 			return false;
 		}
 
- 
 		// moves actor to the new location
 		var newKey = (actor.y + dir.y) +'_' + (actor.x + dir.x);
 		// if the destination tile has an actor in it
 		if (actorMap.hasOwnProperty(newKey) && actorMap[newKey]) {
 			//decrement hitpoints of the actor at the destination tile
 			var victim = actorMap[newKey];
+
+			// avoid orcs to fight with each other
+			if(!actor.isPlayer && !victim.isPlayer){
+				return;
+			}
+
 			victim.hp--;
 
 			if(victim.isPlayer){
