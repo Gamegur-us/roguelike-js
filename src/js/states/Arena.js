@@ -228,58 +228,64 @@ TileSquare.prototype.setObstacle=function(){
 		return Math.floor(Math.random() * max);
 	}
 
- 
-	function Player(game,x,y){
+	function Actor(game,x,y,keySprite){
 		this.hp=3;
 		this.x=x;
 		this.y=y;
-		this.isPlayer=true;
-		this.sprite=game.add.sprite(x*32,y*32,'hero');
-
+		this.isPlayer=null;
+		if(game){
+			this.game=game;
+			this.sprite=game.add.sprite(x*32,y*32,keySprite);
+		}else{
+			this.game=null;
+			this.sprite=null;
+		}
 	}
 
-	Player.prototype.setXY=function(x,y){
+	Actor.prototype.setXY=function(x,y){
 		this.x=x;
 		this.y=y;
-		this.sprite.x=x*32;
-		this.sprite.y=y*32;
+
+		//this.sprite.x=x*32;
+		//this.sprite.y=y*32;
+
+		this.game.add.tween(this.sprite).to( { x:x*32, y:y*32 }, 150, Phaser.Easing.Linear.None,true);
+
 	};
+
+ 
+	function Player(game,x,y){
+		Actor.call(this,game,x,y,'hero');
+		this.hp=3;
+		this.isPlayer=true;
+		
+	}
+	Player.prototype = new Actor();
 
 	function Enemy(game,x,y){
+		Actor.call(this,game,x,y,'orc');
 		this.hp=1;
-		this.x=x;
-		this.y=y;
 		this.isPlayer=false;
-		this.sprite=game.add.sprite(x*32,y*32,'orc');
-		this.sprite.x=x*32;
-		this.sprite.y=y*32;
 	}
+	Enemy.prototype = new Actor();
 
-	Enemy.prototype.setXY=function(x,y){
-		this.x=x;
-		this.y=y;
-		this.sprite.x=x*32;
-		this.sprite.y=y*32;
-	};
-
-
+	
 	function initActors(game) {
 		// create actors at random locations
 		actorList = [];
 		actorMap = {};
-		var actor;
+		var actor,x,y;
 		for (var e=0; e<ACTORS; e++) {
 			// create new actor
 			
-			
-			actor=(e===0)? new Player(game,0,0) :new Enemy(game,0,0);			
-
 			do {
 				// pick a random position that is both a floor and not occupied
-				var x=randomInt(COLS),y=randomInt(ROWS);
-				actor.setXY(x,y);
-					
-			} while ( Map.tiles[actor.y][actor.x] === '#' || actorMap[actor.y + '_' + actor.x] );
+				x=randomInt(COLS);
+				y=randomInt(ROWS);
+			} while ( Map.tiles[y][x] === '#' || actorMap[y + '_' + x] );
+
+			actor=(e===0)? new Player(game,x,y) :new Enemy(game,x,y);			
+
 
 			// add references to the actor to the actors list & map
 			actorMap[actor.y + '_' + actor.x]= actor;
