@@ -187,6 +187,13 @@ TileSquare.prototype.setObstacle=function(){
 
 			victim.hp--;
 
+			setTimeout(function(game,victim){
+				game.add.tween(victim.sprite).to( { x:'+10'},50, Phaser.Easing.Linear.None,true)
+				.to( { x:'-20'},50, Phaser.Easing.Linear.None,true)
+				.to( { x:'+20'},50, Phaser.Easing.Linear.None,true)
+				.to( { x:'-10'},50, Phaser.Easing.Linear.None,true);
+			},200,game,victim);
+
 			if(victim.isPlayer){
 				playerHUD.setText('Player life: '+victim.hp);
 			}
