@@ -15,6 +15,8 @@ var Screen = [];
 var player;
 var actorList;
  
+var playerHUD;
+
 // points to each actor in its position, for quick searching
 var actorMap;
 
@@ -82,17 +84,22 @@ TileSquare.prototype.setObstacle=function(){
 			Map.drawMap();
 			initActors(this);
 	
-			
+			var style = { font: '16px monospace', fill:'#fff'};
+			playerHUD=this.add.text(COLS*32+16, 32, 'Player life: 3', style);
 
 		},
 		update: function () {
-			this.add.sprite('hero');
 		},
 		render: function(){
 			// debug stuff
 		},
 		onKeyUp: function(event) {
 			
+			if(!actorList[0].isPlayer){
+				//gameover
+				return;
+			}
+
 			var acted=false;
 
 			// act on player input
@@ -173,6 +180,10 @@ TileSquare.prototype.setObstacle=function(){
 			//decrement hitpoints of the actor at the destination tile
 			var victim = actorMap[newKey];
 			victim.hp--;
+
+			if(victim.isPlayer){
+				playerHUD.setText('Player life: '+victim.hp);
+			}
 
 			// if it's dead remove its reference
 			if (victim.hp === 0) {
