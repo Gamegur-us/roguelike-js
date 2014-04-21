@@ -22,19 +22,13 @@ var actorMap;
 
 function TileSquare(game,xPos,yPos){
 	this.game=game;
-	this.text=null;
-	this.spritebg= null;
-	
+	this.spritebg= null;	
 	this.xPos=xPos;
 	this.yPos=yPos;
-}
 
-TileSquare.prototype.createText=function(){
 	this.spritebg= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
 	this.spritebg.frame=34;
-	
-	return this;
-};
+}
 
 
 TileSquare.prototype.setObstacle=function(){
@@ -72,6 +66,60 @@ TileSquare.prototype.setObstacle=function(){
 	GameCtrl.Arena.prototype = {
 		
 		create: function () {
+			this.cursors=game.input.keyboard.createCursorKeys();
+		//ROT.RNG.setSeed(1234);
+
+			var _map = new ROT.Map.Rogue(30,30);
+			//ROT.RNG.setSeed(124);
+
+		    var map = this.add.tilemap();
+			
+	        var layer1 = map.create('ground', _map._width, _map._height, 32, 32);
+            layer1.resizeWorld();
+
+			var layer2 = map.createBlankLayer('wall', _map._width, _map._height, 32, 32);
+		    layer2.resizeWorld();
+
+			map.addTilesetImage('terrain_atlas');
+
+			_map.create(function(x,y,v){
+				if(v){
+					return;					
+				}
+		map.putTile(34, x, y, layer1);
+				
+			});
+			/*var _rooms=_map.getRooms();
+			for(var i=0;i<_rooms.length;i++){
+				var r=_rooms[i];
+				for(var j=r.getLeft();j<=r.getRight();j++){
+					for(var k=r.getTop();k<=r.getBottom();k++){	
+						map.putTile(34, j, k, layer1);
+					}
+				}
+
+				for(var d in r._doors){
+					var coord=d.split(',');
+					map.putTile(34, coord[0], coord[1], layer1);	
+			
+				}
+			}
+//return;
+			_rooms=_map.getCorridors();
+			
+			for(var i=0;i<_rooms.length;i++){
+				r=_rooms[i];
+				
+				for(var j=r._startX;j<=r._endX;j++){
+					for(var k=r._startY;k<=r._endY;k++){	
+						map.putTile(34, j, k, layer1);	
+					}
+				}
+			}*/
+
+			
+
+return;
 			this.input.keyboard.addCallbacks(null, null, this.onKeyUp);
 			Map.initMap();
 	
@@ -79,7 +127,7 @@ TileSquare.prototype.setObstacle=function(){
 				var newRow = [];
 				Screen.push(newRow);
 				for (var x = 0; x < COLS; x++){
-					newRow.push(new TileSquare(this, x, y).createText());
+					newRow.push(new TileSquare(this, x, y));
 				}
 			}
 			Map.drawMap();
@@ -90,6 +138,25 @@ TileSquare.prototype.setObstacle=function(){
 
 		},
 		update: function () {
+
+    if (this.cursors.left.isDown)
+    {
+        game.camera.x -= 4;
+    }
+    else if (this.cursors.right.isDown)
+    {
+        game.camera.x += 4;
+    }
+
+    if (this.cursors.up.isDown)
+    {
+        game.camera.y -= 4;
+    }
+    else if (this.cursors.down.isDown)
+    {
+        game.camera.y += 4;
+    }
+
 		},
 		render: function(){
 			// debug stuff
@@ -105,7 +172,7 @@ TileSquare.prototype.setObstacle=function(){
 
 			// act on player input
 			if(event.keyCode===Phaser.Keyboard.LEFT) {
-					acted=moveTo(player, {x:-1, y:0});
+				acted=moveTo(player, {x:-1, y:0});
 			} else if(event.keyCode===Phaser.Keyboard.RIGHT) {
 				acted=moveTo(player,{x:1, y:0});
 			} else if(event.keyCode===Phaser.Keyboard.UP) {
