@@ -71,10 +71,13 @@ TileSquare.prototype.setObstacle=function(){
 			this.cursors=game.input.keyboard.createCursorKeys();
 			//ROT.RNG.setSeed(1234);
 
-			var _map = new ROT.Map.Rogue(35,35);
+			var _map = new ROT.Map.Rogue(135,135);
 			//var _map = new ROT.Map.Digger(30,30);
 			
-			ROT.RNG.setSeed(124);
+//			ROT.RNG.setSeed(124);
+
+
+			// @TODO usar metodo de phaser parseTiledJSON
 
 		    var map = this.add.tilemap();
 			
@@ -201,9 +204,11 @@ TileSquare.prototype.setObstacle=function(){
 						}else{
 							map.putTile(13, x, y, layer2);
 						}
-					}else if(directions.um && directions.bm ){
+					}else if((directions.um && directions.bm)||(directions.ml && directions.mr)){
 						map.putTile(34, x, y, layer1);
-						map.putTile(17, x, y, layer2);
+						var f=[17,22,17];
+						f=f[Math.floor((Math.random()*3))];
+						map.putTile(f, x, y, layer2);
 					}
 				}
 			}
