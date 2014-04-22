@@ -1,5 +1,6 @@
 /* global GameCtrl */
 /* global game */
+/* global ROT */
 'use strict';
  
 // map dimensions
@@ -66,18 +67,22 @@ TileSquare.prototype.setObstacle=function(){
 	GameCtrl.Arena.prototype = {
 		
 		create: function () {
+			this.game.stage.backgroundColor='#2e203c';
 			this.cursors=game.input.keyboard.createCursorKeys();
-		//ROT.RNG.setSeed(1234);
+			//ROT.RNG.setSeed(1234);
 
-			var _map = new ROT.Map.Rogue(30,30);
-			//ROT.RNG.setSeed(124);
+			var _map = new ROT.Map.Rogue(35,35);
+			//var _map = new ROT.Map.Digger(30,30);
+			
+			ROT.RNG.setSeed(124);
 
 		    var map = this.add.tilemap();
 			
 	        var layer1 = map.create('ground', _map._width, _map._height, 32, 32);
             layer1.resizeWorld();
 
-			var layer2 = map.createBlankLayer('wall', _map._width, _map._height, 32, 32);
+			
+			var layer2 = map.createBlankLayer('trees', _map._width, _map._height, 32, 32);
 		    layer2.resizeWorld();
 
 			map.addTilesetImage('terrain_atlas');
@@ -86,40 +91,156 @@ TileSquare.prototype.setObstacle=function(){
 				if(v){
 					return;					
 				}
-		map.putTile(34, x, y, layer1);
-				
+				map.putTile(34, x, y, layer1);
 			});
-			/*var _rooms=_map.getRooms();
+
+
+			var _exist=function(x,y){
+				return (typeof _map.map[x] !== 'undefined' && typeof _map.map[x][y]!== 'undefined' && _map.map[x][y]===0);
+			};
+
+			for(var y=0;y<_map._height;y++){
+				for(var x=0;x<_map._width;x++){
+					if(_map.map[x][y]===0){
+						continue;
+					}
+
+					var directions={
+						ul: _exist(x-1,y-1),
+						um: _exist(x,y-1),
+						ur: _exist(x+1,y-1),
+						ml: _exist(x-1,y),
+						//mm: exist(x-1,y),
+						mr: _exist(x+1,y),
+						bl: _exist(x-1,y+1),
+						bm: _exist(x,y+1),
+						br: _exist(x+1,y+1),
+					};
+
+					if(directions.um  && directions.ul  && directions.ur  &&
+						!directions.ml && !directions.mr &&
+						!directions.bl && !directions.bm && !directions.br ){
+						
+						// tope superior						
+						map.putTile(34, x, y, layer1);
+						map.putTile(3, x, y, layer2);
+					}else if(directions.um  && directions.ul 
+						&& directions.ml && !directions.mr &&
+						!directions.bm &&!directions.br 
+						){
+						// borde izq sup
+						map.putTile(34, x, y, layer1);
+						map.putTile(2, x, y, layer2);
+					}else if(!directions.ur && !directions.um &&
+						directions.ml && !directions.mr &&
+						directions.bl && !directions.bm && !directions.br 
+						){
+						// borde izq med
+						map.putTile(34, x, y, layer1);
+						map.putTile(7, x, y, layer2);
+					}else if(directions.ul  && !directions.ur && !directions.um &&
+						directions.ml && !directions.mr &&
+						directions.bl && directions.bm && directions.br 
+						){
+						// borde izq aba
+						map.putTile(34, x, y, layer1);
+						map.putTile(12, x, y, layer2);
+					}else if(directions.um  && directions.ur 
+						&& directions.mr && !directions.ml &&
+						!directions.bm &&!directions.bl 
+						){
+						// borde der sup
+						map.putTile(34, x, y, layer1);
+						map.putTile(4, x, y, layer2);
+					}else if( !directions.ul && !directions.um &&
+						directions.mr && !directions.ml &&
+						!directions.bl && !directions.bm && directions.br 
+						){
+						// borde der med
+						map.putTile(34, x, y, layer1);
+						map.putTile(9, x, y, layer2);
+					}else if(!directions.ul  && directions.ur && !directions.um &&
+						!directions.ml && directions.mr &&
+						directions.br 
+						){
+						// borde der aba
+						map.putTile(34, x, y, layer1);
+						map.putTile(14, x, y, layer2);
+					}else if(!directions.ul  && !directions.ur && !directions.um &&
+						!directions.ml && !directions.mr &&
+						!directions.bl && !directions.bm && directions.br
+						){
+						map.putTile(34, x, y, layer1);
+						
+						if(y>0){
+							map.putTile(0, x, y-1, layer2);
+						}
+						map.putTile(5, x, y, layer2);
+					}else if(!directions.ul  && !directions.ur && !directions.um &&
+						!directions.ml && !directions.mr &&
+						directions.bl && !directions.bm && !directions.br
+						){
+						map.putTile(34, x, y, layer1);
+						
+						if(y>0){
+							map.putTile(1, x, y-1, layer2);
+						}
+						map.putTile(6, x, y, layer2);
+					}else if(!directions.ul  && !directions.ur && !directions.um &&
+							!directions.ml && !directions.mr &&
+							 directions.bm 
+						){
+						map.putTile(34, x, y, layer1);
+						if(y>0){
+							map.putTile(8, x, y-1, layer2);
+						}
+						
+						var r=ROT.RNG.getUniformInt(0,4);
+						if(r===0){
+							map.putTile(25, x, y, layer2);
+						}else{
+							map.putTile(13, x, y, layer2);
+						}
+					}else if(directions.um && directions.bm ){
+						map.putTile(34, x, y, layer1);
+						map.putTile(17, x, y, layer2);
+					}
+				}
+			}
+
+			/*
+
+			var _rooms=_map.getRooms();
 			for(var i=0;i<_rooms.length;i++){
 				var r=_rooms[i];
 				for(var j=r.getLeft();j<=r.getRight();j++){
 					for(var k=r.getTop();k<=r.getBottom();k++){	
-						map.putTile(34, j, k, layer1);
+						map.putTile(32, j, k, layer1);
 					}
 				}
 
 				for(var d in r._doors){
 					var coord=d.split(',');
-					map.putTile(34, coord[0], coord[1], layer1);	
+					map.putTile(31, coord[0], coord[1], layer2);	
 			
 				}
 			}
 //return;
-			_rooms=_map.getCorridors();
+
+			var _rooms=_map.getCorridors();
 			
 			for(var i=0;i<_rooms.length;i++){
-				r=_rooms[i];
+				var r=_rooms[i];
 				
 				for(var j=r._startX;j<=r._endX;j++){
 					for(var k=r._startY;k<=r._endY;k++){	
-						map.putTile(34, j, k, layer1);	
+						map.putTile(31, j, k, layer2);	
 					}
 				}
 			}*/
 
-			
-
-return;
+			//return;
+			return;
 			this.input.keyboard.addCallbacks(null, null, this.onKeyUp);
 			Map.initMap();
 	
@@ -139,23 +260,23 @@ return;
 		},
 		update: function () {
 
-    if (this.cursors.left.isDown)
-    {
-        game.camera.x -= 4;
-    }
-    else if (this.cursors.right.isDown)
-    {
-        game.camera.x += 4;
-    }
+		    if (this.cursors.left.isDown)
+		    {
+		        game.camera.x -= 4;
+		    }
+		    else if (this.cursors.right.isDown)
+		    {
+		        game.camera.x += 4;
+		    }
 
-    if (this.cursors.up.isDown)
-    {
-        game.camera.y -= 4;
-    }
-    else if (this.cursors.down.isDown)
-    {
-        game.camera.y += 4;
-    }
+		    if (this.cursors.up.isDown)
+		    {
+		        game.camera.y -= 4;
+		    }
+		    else if (this.cursors.down.isDown)
+		    {
+		        game.camera.y += 4;
+		    }
 
 		},
 		render: function(){
