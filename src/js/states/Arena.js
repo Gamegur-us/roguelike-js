@@ -4,13 +4,12 @@
 'use strict';
  
 // map dimensions
-var ROWS = 10;
-var COLS = 15;
+var ROWS = 50;
+var COLS = 50;
  
 // number of actors per level, including player
-var ACTORS = 10;
+var ACTORS = 25;
 
-var Screen = [];
 
 // a list of all actors; i0 is the player
 var player;
@@ -21,22 +20,6 @@ var playerHUD;
 // points to each actor in its position, for quick searching
 var actorMap;
 
-function TileSquare(game,xPos,yPos){
-	this.game=game;
-	this.spritebg= null;	
-	this.xPos=xPos;
-	this.yPos=yPos;
-
-	this.spritebg= this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
-	this.spritebg.frame=34;
-}
-
-
-TileSquare.prototype.setObstacle=function(){
-	var sprite=this.game.add.sprite(32*this.xPos, 32*this.yPos, 'forest-tiles');
-	var f=[17,22,23];
-	sprite.frame=f[Math.floor((Math.random()*3))];
-};
 
 (function(){
 	GameCtrl.Arena = function () {
@@ -69,226 +52,40 @@ TileSquare.prototype.setObstacle=function(){
 		create: function () {
 			this.game.stage.backgroundColor='#2e203c';
 			this.cursors=game.input.keyboard.createCursorKeys();
-			//ROT.RNG.setSeed(1234);
 
-			var _map = new ROT.Map.Rogue(135,135);
-			//var _map = new ROT.Map.Digger(30,30);
 			
 //			ROT.RNG.setSeed(124);
 
-
-			// @TODO usar metodo de phaser parseTiledJSON
-
-		    var map = this.add.tilemap();
+			this.mapData=generateMap('ROTmap',this.cache,COLS,ROWS,32,32);
 			
-	        var layer1 = map.create('ground', _map._width, _map._height, 32, 32);
+			var map = this.add.tilemap('ROTmap');
+			
+			map.addTilesetImage('forest-tiles', 'forest-tiles');
+	        var layer1 = map.createLayer('ground');
             layer1.resizeWorld();
-
-			
-			var layer2 = map.createBlankLayer('trees', _map._width, _map._height, 32, 32);
-		    layer2.resizeWorld();
-
-			map.addTilesetImage('terrain_atlas');
-
-			_map.create(function(x,y,v){
-				if(v){
-					return;					
-				}
-				map.putTile(34, x, y, layer1);
-			});
-
-
-			var _exist=function(x,y){
-				return (typeof _map.map[x] !== 'undefined' && typeof _map.map[x][y]!== 'undefined' && _map.map[x][y]===0);
-			};
-
-			for(var y=0;y<_map._height;y++){
-				for(var x=0;x<_map._width;x++){
-					if(_map.map[x][y]===0){
-						continue;
-					}
-
-					var directions={
-						ul: _exist(x-1,y-1),
-						um: _exist(x,y-1),
-						ur: _exist(x+1,y-1),
-						ml: _exist(x-1,y),
-						//mm: exist(x-1,y),
-						mr: _exist(x+1,y),
-						bl: _exist(x-1,y+1),
-						bm: _exist(x,y+1),
-						br: _exist(x+1,y+1),
-					};
-
-					if(directions.um  && directions.ul  && directions.ur  &&
-						!directions.ml && !directions.mr &&
-						!directions.bl && !directions.bm && !directions.br ){
-						
-						// tope superior						
-						map.putTile(34, x, y, layer1);
-						map.putTile(3, x, y, layer2);
-					}else if(directions.um  && directions.ul 
-						&& directions.ml && !directions.mr &&
-						!directions.bm &&!directions.br 
-						){
-						// borde izq sup
-						map.putTile(34, x, y, layer1);
-						map.putTile(2, x, y, layer2);
-					}else if(!directions.ur && !directions.um &&
-						directions.ml && !directions.mr &&
-						directions.bl && !directions.bm && !directions.br 
-						){
-						// borde izq med
-						map.putTile(34, x, y, layer1);
-						map.putTile(7, x, y, layer2);
-					}else if(directions.ul  && !directions.ur && !directions.um &&
-						directions.ml && !directions.mr &&
-						directions.bl && directions.bm && directions.br 
-						){
-						// borde izq aba
-						map.putTile(34, x, y, layer1);
-						map.putTile(12, x, y, layer2);
-					}else if(directions.um  && directions.ur 
-						&& directions.mr && !directions.ml &&
-						!directions.bm &&!directions.bl 
-						){
-						// borde der sup
-						map.putTile(34, x, y, layer1);
-						map.putTile(4, x, y, layer2);
-					}else if( !directions.ul && !directions.um &&
-						directions.mr && !directions.ml &&
-						!directions.bl && !directions.bm && directions.br 
-						){
-						// borde der med
-						map.putTile(34, x, y, layer1);
-						map.putTile(9, x, y, layer2);
-					}else if(!directions.ul  && directions.ur && !directions.um &&
-						!directions.ml && directions.mr &&
-						directions.br 
-						){
-						// borde der aba
-						map.putTile(34, x, y, layer1);
-						map.putTile(14, x, y, layer2);
-					}else if(!directions.ul  && !directions.ur && !directions.um &&
-						!directions.ml && !directions.mr &&
-						!directions.bl && !directions.bm && directions.br
-						){
-						map.putTile(34, x, y, layer1);
-						
-						if(y>0){
-							map.putTile(0, x, y-1, layer2);
-						}
-						map.putTile(5, x, y, layer2);
-					}else if(!directions.ul  && !directions.ur && !directions.um &&
-						!directions.ml && !directions.mr &&
-						directions.bl && !directions.bm && !directions.br
-						){
-						map.putTile(34, x, y, layer1);
-						
-						if(y>0){
-							map.putTile(1, x, y-1, layer2);
-						}
-						map.putTile(6, x, y, layer2);
-					}else if(!directions.ul  && !directions.ur && !directions.um &&
-							!directions.ml && !directions.mr &&
-							 directions.bm 
-						){
-						map.putTile(34, x, y, layer1);
-						if(y>0){
-							map.putTile(8, x, y-1, layer2);
-						}
-						
-						var r=ROT.RNG.getUniformInt(0,4);
-						if(r===0){
-							map.putTile(25, x, y, layer2);
-						}else{
-							map.putTile(13, x, y, layer2);
-						}
-					}else if((directions.um && directions.bm)||(directions.ml && directions.mr)){
-						map.putTile(34, x, y, layer1);
-						var f=[17,22,17];
-						f=f[Math.floor((Math.random()*3))];
-						map.putTile(f, x, y, layer2);
-					}
-				}
-			}
-
-			/*
-
-			var _rooms=_map.getRooms();
-			for(var i=0;i<_rooms.length;i++){
-				var r=_rooms[i];
-				for(var j=r.getLeft();j<=r.getRight();j++){
-					for(var k=r.getTop();k<=r.getBottom();k++){	
-						map.putTile(32, j, k, layer1);
-					}
-				}
-
-				for(var d in r._doors){
-					var coord=d.split(',');
-					map.putTile(31, coord[0], coord[1], layer2);	
-			
-				}
-			}
-//return;
-
-			var _rooms=_map.getCorridors();
-			
-			for(var i=0;i<_rooms.length;i++){
-				var r=_rooms[i];
-				
-				for(var j=r._startX;j<=r._endX;j++){
-					for(var k=r._startY;k<=r._endY;k++){	
-						map.putTile(31, j, k, layer2);	
-					}
-				}
-			}*/
-
+			var layer2 = map.createLayer('decoration');
+            layer2.resizeWorld();
 			//return;
-			return;
+			
+			//var layer2 = map.createBlankLayer('trees', _map._width, _map._height, 32, 32);
+		    //layer2.resizeWorld();
+
+
+
 			this.input.keyboard.addCallbacks(null, null, this.onKeyUp);
-			Map.initMap();
+
+			Map.initMap(this.mapData);
 	
-			for (var y = 0; y < ROWS; y++) {
-				var newRow = [];
-				Screen.push(newRow);
-				for (var x = 0; x < COLS; x++){
-					newRow.push(new TileSquare(this, x, y));
-				}
-			}
-			Map.drawMap();
 			initActors(this);
 	
 			var style = { font: '16px monospace', fill:'#fff'};
-			playerHUD=this.add.text(COLS*32+16, 32, 'Player life: 3', style);
+			playerHUD=this.add.text(0, 0, 'Player life: 3', style);
+			playerHUD.fixedToCamera = true;
+    		playerHUD.cameraOffset.setTo(500, 50);
 
-		},
-		update: function () {
 
-		    if (this.cursors.left.isDown)
-		    {
-		        game.camera.x -= 4;
-		    }
-		    else if (this.cursors.right.isDown)
-		    {
-		        game.camera.x += 4;
-		    }
-
-		    if (this.cursors.up.isDown)
-		    {
-		        game.camera.y -= 4;
-		    }
-		    else if (this.cursors.down.isDown)
-		    {
-		        game.camera.y += 4;
-		    }
-
-		},
-		render: function(){
-			// debug stuff
 		},
 		onKeyUp: function(event) {
-			
 			if(!actorList[0].isPlayer){
 				//gameover
 				return;
@@ -320,42 +117,18 @@ TileSquare.prototype.setObstacle=function(){
 	};
 
 	var Map={
-		tiles:[],
-		firstDraw:true,
-		initMap: function() {
-			// create a new random map
-			this.tiles = [];
-			for (var y = 0; y < ROWS; y++) {
-				var newRow = [];
-				for (var x = 0; x < COLS; x++) {
-					if (Math.random() > 0.8){
-						newRow.push('#');
-					}else{
-						newRow.push(' ');
-					}
-				}
-				this.tiles.push(newRow);
-			}
-		},
-		drawMap:function() {
-			for (var y = 0; y < ROWS; y++){
-				for (var x = 0; x < COLS; x++){
-					if(Map.tiles[y][x]!=='#'){
-						continue;
-					}
-					
-					Screen[y][x].setObstacle(Map.tiles[y][x]);
-					
-				}
-			}
-
+		tiles:null,
+		rotmap:null,
+		initMap: function(rotmap){
+			this.rotmap=rotmap;
+			this.tiles=JSON.parse(JSON.stringify(rotmap.map));
 		},
 		canGo:function (actor,dir) {
 			return  actor.x+dir.x >= 0 &&
 				actor.x+dir.x <= COLS - 1 &&
 				actor.y+dir.y >= 0 &&
 				actor.y+dir.y <= ROWS - 1 &&
-				Map.tiles[actor.y+dir.y][actor.x +dir.x] === ' ';
+				Map.tiles[actor.x +dir.x][actor.y+dir.y] === 0;
 		}
 	};
 
@@ -367,7 +140,7 @@ TileSquare.prototype.setObstacle=function(){
 		}
 
 		// moves actor to the new location
-		var newKey = (actor.y + dir.y) +'_' + (actor.x + dir.x);
+		var newKey = (actor.x + dir.x) +'_' + (actor.y + dir.y);
 		// if the destination tile has an actor in it
 		if (actorMap.hasOwnProperty(newKey) && actorMap[newKey]) {
 			//decrement hitpoints of the actor at the destination tile
@@ -406,7 +179,7 @@ TileSquare.prototype.setObstacle=function(){
 			}
 		} else {
 			// remove reference to the actor's old position
-			delete actorMap[actor.y + '_' + actor.x];
+			delete actorMap[actor.x + '_' + actor.y];
 
 			// update position
 			actor.setXY(actor.x+dir.x,actor.y+dir.y);
@@ -424,15 +197,12 @@ TileSquare.prototype.setObstacle=function(){
 			
 
 			// add reference to the actor's new position
-			actorMap[actor.y + '_' + actor.x]=actor;
+			actorMap[actor.x + '_' + actor.y]=actor;
 		}
 		return true;
 	}
 
-	function randomInt(max) {
-		return Math.floor(Math.random() * max);
-	}
-
+	
 	function Actor(game,x,y,keySprite){
 		this.hp=3;
 		this.x=x;
@@ -480,25 +250,45 @@ TileSquare.prototype.setObstacle=function(){
 		actorList = [];
 		actorMap = {};
 		var actor,x,y;
+		
+		var random=function (max) {
+			return Math.floor(Math.random() * max);
+		};
+
+		var validpos=[];
+		for(x=0;x<COLS;x++){
+			for(y=0;y<ROWS;y++){
+				if(!Map.tiles[x][y]){
+					validpos.push({x:x,y:y});
+				}
+			}
+		}
+
+
 		for (var e=0; e<ACTORS; e++) {
 			// create new actor
-			
 			do {
+				//var room=m.rooms[random(2)][random(2)];
+				var r=validpos[random(validpos.length)];
+				x=r.x;
+				y=r.y;
 				// pick a random position that is both a floor and not occupied
-				x=randomInt(COLS);
-				y=randomInt(ROWS);
-			} while ( Map.tiles[y][x] === '#' || actorMap[y + '_' + x] );
+				//x=room.x+random(room.width);
+				//y=room.y+random(room.height);
+			} while ( actorMap[x + '_' + y] );
 
 			actor=(e===0)? new Player(game,x,y) :new Enemy(game,x,y);			
 
 
 			// add references to the actor to the actors list & map
-			actorMap[actor.y + '_' + actor.x]= actor;
+			actorMap[actor.x + '_' + actor.y]= actor;
 			actorList.push(actor);
 		}
- 
+
 		// the player is the first actor in the list
 		player = actorList[0];
+		game.camera.follow(player.sprite);
+ 
 	}
 
 	function aiAct(actor) {
@@ -506,38 +296,44 @@ TileSquare.prototype.setObstacle=function(){
 		var dx = player.x - actor.x;
 		var dy = player.y - actor.y;
  
-		// if player is far away, walk randomly
-		if (Math.abs(dx) + Math.abs(dy) > 6){
+		var moveToRandomPos=function(){
 			var rndDirections=shuffleArray(directions);
 			for(var i=0;i<rndDirections.length;i++){
 				if(moveTo(actor, rndDirections[i])){
 					break;
 				}
 			}
-		}
-		
-		// otherwise walk towards player
-		if (Math.abs(dx) > Math.abs(dy)) {
-				if (dx < 0) {
-					// left
-					moveTo(actor, directions[0]);
-				} else {
-					// right
-					moveTo(actor, directions[1]);
+		};
+
+		// if player is far away, walk randomly
+		if (Math.abs(dx) + Math.abs(dy) > 6){
+			moveToRandomPos();
+		}else{
+			// otherwise walk towards player
+			// dumb walk
+
+			directions=directions.map(function(e){
+				return {
+					x:e.x,
+					y:e.y,
+					dist:Math.pow(dx+e.x,2)+Math.pow(dy+e.y,2)
+				};
+			//}).sort(function(a,b){ return a.dist-b.dist; });
+		}).sort(function(a,b){ return b.dist-a.dist; });
+
+			for(var d=0,len=directions.length;d<len;d++){
+				if(moveTo(actor, directions[d])){
+					break;
 				}
-		} else {
-				if (dy < 0) {
-					// up
-					moveTo(actor, directions[2]);
-				} else {
-					// down
-					moveTo(actor, directions[3]);
-				}
+			}
+			
 		}
+
 		if (player.hp < 1) {
 			// game over message
-			var gameOver = game.add.text(game.world.centerX, game.world.centerY, 'Game Over\nCtrl+r to restart', { fill : '#e22', align: "center" } );
-			gameOver.anchor.setTo(0.5,0.5);
+			var gameOver = game.add.text(0, 0, 'Game Over\nCtrl+r to restart', { fill : '#e22', align: 'center' } );
+			gameOver.fixedToCamera = true;
+    		gameOver.cameraOffset.setTo(500, 500);
 		}
 	}
 	
@@ -551,4 +347,331 @@ TileSquare.prototype.setObstacle=function(){
 		return array;
 	}
 }());
+
+
+
+
+
+function generateMap(keyName, _cache, width, height, tilewidth, tileheight){
+	var _map = new ROT.Map.Rogue(width, height);
+
+	var jsonmap={
+		layers:[{
+				data:new Array(width*height),
+				height:height,
+				name:'ground',
+				opacity:1,
+				type:'tilelayer',
+				visible:true,
+				width:width,
+				x:0,
+				y:0
+        	},{
+        		data:[],
+				height:height,
+				name:'decoration',
+				opacity:1,
+				type:'tilelayer',
+				visible:true,
+				width:width,
+				x:0,
+				y:0
+			}
+		],
+ 		orientation:'orthogonal',
+ 		properties:{},
+ 		tileheight:tileheight,
+ 		tilesets:[{
+         	firstgid:1,
+         	image:'assets/images/foresttiles_0.png', // ??
+         	imagewidth:160,// ??
+         	imageheight:224,// ??
+         	margin:0,
+         	name:'forest-tiles',
+         	properties:{},
+         	spacing:0,
+         	tileheight:tileheight,
+         	tilewidth:tilewidth
+		}],
+ 		tilewidth:tilewidth,
+ 		version:1,
+ 		height:tileheight,
+ 		width:tilewidth
+	};
+
+	var ARENA=35;
+
+	//	map.addTilesetImage('terrain_atlas');
+
+
+	_map.create(function(x,y,v){
+		// layer 0 es el "ground"
+		//jsonmap.layers[0].data.push((v===1)? 0 : ARENA);
+		jsonmap.layers[0].data[y*width+x]=(v===1)? 0 : ARENA;
+		
+		// y*width+x <- podria usar esta cuenta pero como esta ordenado uso el push
+	});
+
+	_cache.addTilemap(keyName,'', jsonmap);
+
+	var _exist=function(x,y){
+		return (typeof _map.map[x] !== 'undefined' && typeof _map.map[x][y]!== 'undefined' && _map.map[x][y]===0)? '1':'0';
+	};
+
+
+
+	var cbSetBackground=function(tile){
+		return function(){
+			jsonmap.layers[0].data[tilepos]=ARENA;
+			jsonmap.layers[1].data[tilepos]=tile;
+		};
+	};
+
+	var patternArray=[];
+	var addPattern=function(pattern,cb){
+		patternArray.push({
+			regex:new RegExp(pattern.replace(/\*/g,'[0-1]')),
+			cb:cb
+		});	
+	};
+
+
+	addPattern(
+		'000'+
+		'0*0'+
+		'*1*',function(tilepos,x,y){
+			cbSetBackground(14)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=9;
+			}
+
+		});
+	
+	addPattern(
+		'000'+
+		'0*0'+
+		'1*1',function(tilepos,x,y){
+			cbSetBackground(14)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=9;
+			}
+
+		});
+	
+	addPattern(
+		'000'+
+		'0*0'+
+		'001',function(tilepos,x,y){
+			cbSetBackground(6)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=1;
+			}
+
+		});
+	
+	addPattern(
+		'00*'+
+		'0*1'+
+		'*11',function(tilepos,x,y){
+			cbSetBackground(15)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=10;
+			}
+		});
+
+	addPattern(
+		'00*'+
+		'0*1'+
+		'101',function(tilepos,x,y){
+			cbSetBackground(15)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=10;
+			}
+		});
+
+	addPattern(
+		'000'+
+		'0*0'+
+		'100',function(tilepos,x,y){
+			cbSetBackground(7)();
+			if(y>0){
+				jsonmap.layers[1].data[(y-1)*width+x]=2;
+			}
+		});
+	
+	addPattern(
+		'00*'+
+		'0*1'+
+		'00*',cbSetBackground(10));
+	
+	addPattern(
+		'*1*'+
+		'0*0'+
+		'000',cbSetBackground(4));
+	
+
+	addPattern(
+		'**1'+
+		'0*0'+
+		'000',cbSetBackground(11));
+	
+	addPattern(
+		'111'+
+		'0**'+
+		'001',cbSetBackground(5));
+
+	
+	addPattern(
+		'*00'+
+		'1*0'+
+		'*00',cbSetBackground(8));
+
+
+	addPattern(
+		'*00'+
+		'**0'+
+		'11*',cbSetBackground(13));
+
+	addPattern(
+		'*1*'+
+		'1*0'+
+		'*00',cbSetBackground(3));
+	
+	addPattern(
+		'1**'+
+		'**0'+
+		'*00',cbSetBackground(12));
+	
+	addPattern(
+		'**1'+
+		'0**'+
+		'00*',cbSetBackground(5));
+	addPattern(
+		'001'+
+		'0*0'+
+		'111',cbSetBackground(15));
+
+
+	addPattern(
+		'*00'+
+		'1*0'+
+		'1*1',cbSetBackground(13));
+
+
+/*
+	addPattern(
+		'100'+
+		'1*0'+
+		'111',cbSetBackground(13));
+
+	addPattern(
+		'100'+
+		'***'+
+		'000',cbSetBackground(12));
+	addPattern(
+		'*11'+
+		'0**'+
+		'001',cbSetBackground(5));
+	
+
+	/*addPattern(
+		'*11'+
+		'1*0'+
+		'000',cbSetBackground(3));
+	
+	/*
+	addPattern(
+		'*11'+
+		'1*0'+
+		'*00',cbSetBackground(3));
+	addPattern(
+		'00*'+
+		'1*0'+
+		'100',cbSetBackground(8));
+	addPattern(
+		'100'+
+		'1*0'+
+		'111',cbSetBackground(13));
+	addPattern(
+		'*11'+
+		'0*1'+
+		'***',cbSetBackground(5));
+	addPattern(
+		'00*'+
+		'1*0'+
+		'***',cbSetBackground(10));
+	addPattern(
+		'000'+
+		'0*0'+
+		'001',cbSetBackground(6));
+	addPattern(
+		'000'+
+		'0*0'+
+		'100',cbSetBackground(7));
+
+	addPattern(
+		'000'+
+		'0*0'+
+		'*1*',function(){
+			jsonmap.layers[0].data[tilepos]= ARENA;
+			//jsonmap.layers[1].data[tilepos]=8;??
+			
+			var r=ROT.RNG.getUniformInt(0,4);
+			if(r===0){
+				jsonmap.layers[1].data[tilepos]= 26;
+			}else{
+				jsonmap.layers[1].data[tilepos]= 14;
+			}
+	});
+	*/
+
+
+	addPattern(
+		'*1*'+
+		'***'+
+		'*1*',function(){
+			jsonmap.layers[0].data[tilepos]= ARENA;
+			var f=[18,23,18];
+			f=f[Math.floor((Math.random()*3))];
+			jsonmap.layers[1].data[tilepos]=f;
+	});
+	addPattern(
+		'***'+
+		'1*1'+
+		'***',function(){
+			jsonmap.layers[0].data[tilepos]= ARENA;
+			var f=[18,23,18];
+			f=f[Math.floor((Math.random()*3))];
+			jsonmap.layers[1].data[tilepos]=f;
+	});
+
+
+
+	for(var y=0;y<_map._height;y++){
+		for(var x=0;x<_map._width;x++){
+			jsonmap.layers[1].data.push(0);
+			if(_map.map[x][y]===0){
+				continue;
+			}
+
+			var tilepos=y*width+x;
+			var direction=
+				_exist(x-1,y-1)+_exist(x,y-1)+_exist(x+1,y-1)+
+				// ml,*,mr  lepongo 0 por ponerle algo en realidad es siempre *
+				_exist(x-1,y)+'1'+_exist(x+1,y)+
+				_exist(x-1,y+1)+_exist(x,y+1)+_exist(x+1,y+1);
+
+			for (var i = 0,len=patternArray.length;i < len; i++) {
+				if(patternArray[i].regex.test(direction)){
+					patternArray[i].cb(tilepos, x, y);
+					break;
+				}
+			}
+
+		}
+	}
+
+	return _map;
+	
+}
 
