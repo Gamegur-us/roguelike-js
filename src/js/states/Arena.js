@@ -74,6 +74,9 @@ var actorMap;
 
 			this.input.keyboard.addCallbacks(null, null, this.onKeyUp);
 
+		    this.input.setMoveCallback(this.mouseCallback, this);
+
+
 			Map.initMap(this.mapData);
 	
 			initActors(this);
@@ -85,6 +88,36 @@ var actorMap;
 
 
 		},
+		clickeable:true,
+		mouseCallback: function(){
+
+			if(this.clickeable && this.input.mousePointer.isDown){
+				this.clickeable=false;
+
+				setTimeout(function(g) {
+					g.clickeable=true;
+				},400,this);
+
+				var x=this.input.activePointer.worldX;
+	    		var y=this.input.activePointer.worldY;
+				var dx=Math.abs(player.sprite.x-x);
+				var dy=Math.abs(player.sprite.y-y);
+				debugger;
+				if(dx>dy){
+					if(x>player.sprite.x){
+						this.onKeyUp({keyCode:Phaser.Keyboard.RIGHT});
+					}else{
+						this.onKeyUp({keyCode:Phaser.Keyboard.LEFT});
+					}
+				}else{
+					if(y>player.sprite.y){
+						this.onKeyUp({keyCode:Phaser.Keyboard.DOWN});
+					}else{
+						this.onKeyUp({keyCode:Phaser.Keyboard.UP});
+					}
+				}
+			}
+    	},
 		onKeyUp: function(event) {
 			if(!actorList[0].isPlayer){
 				//gameover
