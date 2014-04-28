@@ -166,7 +166,7 @@ var actorMap;
 
 			var axis=(actor.x===victim.x)?'y':'x';
 
-			var dir=victim[axis]-actor[axis];
+			dir=victim[axis]-actor[axis];
 			dir=dir/Math.abs(dir); // +1 or -1
 
 			var pos1={},pos2={};
