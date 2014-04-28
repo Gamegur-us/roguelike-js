@@ -139,6 +139,17 @@ var actorMap;
 			return false;
 		}
 
+		if(dir.x===1){
+			actor.sprite.frame=2;
+		}else if(dir.x===-1){
+			actor.sprite.frame=3;
+		}else if(dir.y===-1){
+			actor.sprite.frame=1;
+		}else if(dir.y===1){
+			actor.sprite.frame=0;
+		}
+			
+
 		// moves actor to the new location
 		var newKey = (actor.x + dir.x) +'_' + (actor.y + dir.y);
 		// if the destination tile has an actor in it
@@ -152,6 +163,24 @@ var actorMap;
 			}
 
 			victim.hp--;
+
+			var axis=(actor.x===victim.x)?'y':'x';
+
+			var dir=victim[axis]-actor[axis];
+			dir=dir/Math.abs(dir); // +1 or -1
+
+			var pos1={},pos2={};
+			pos1[axis]=(dir*15).toString();
+			pos2[axis]=(dir*15*(-1)).toString();
+
+			
+			game.camera.follow(false);
+			
+			game.add.tween(actor.sprite).to( pos1,100, Phaser.Easing.Linear.None,true)
+			.to( pos2,100, Phaser.Easing.Linear.None,true)
+			.onComplete.add(function(){
+				game.camera.follow(actor.sprite);
+			}, this);
 
 			setTimeout(function(game,victim){
 				game.add.tween(victim.sprite).to( { x:'+10'},50, Phaser.Easing.Linear.None,true)
@@ -183,17 +212,6 @@ var actorMap;
 
 			// update position
 			actor.setXY(actor.x+dir.x,actor.y+dir.y);
-			//if(actor.isPlayer){
-			if(dir.x===1){
-				actor.sprite.frame=2;
-			}else if(dir.x===-1){
-				actor.sprite.frame=3;
-			}else if(dir.y===-1){
-				actor.sprite.frame=1;
-			}else if(dir.y===1){
-				actor.sprite.frame=0;
-			}
-			//}
 			
 
 			// add reference to the actor's new position
