@@ -15,10 +15,10 @@ module.exports = (grunt) ->
         'https://raw.github.com/photonstorm/phaser/master/build/phaser.js'
       ]
 
-    clean:
-      options:
-        force: true
-      dist: ['<%= DST_DIR %>']
+    #clean:
+    #  options:
+    #    force: true
+    #  dist: ['<%= DST_DIR %>']
 
     copy:
       assets:
@@ -115,7 +115,7 @@ module.exports = (grunt) ->
   @loadNpmTasks 'grunt-curl'
   @loadNpmTasks 'grunt-processhtml'
 
-  @registerTask 'dist', ['clean', 'jshint', 'uglify',
+  @registerTask 'dist', ['jshint', 'uglify',
                          'cssmin', 'copy', 'processhtml', 'htmlmin']
   @registerTask 'server',  ['jshint', 'connect', 'watch']
   @registerTask 'update', ['curl-dir']
