@@ -77,10 +77,12 @@ var actorMap;
 		    this.input.setMoveCallback(this.mouseCallback, this);
 
 
-			Map.initMap(this.mapData);
+			Map.initMap(this.mapData, map);
 	
 			initActors(this);
-	
+			
+			Map.light();
+
 			var style = { font: '16px monospace', fill:'#fff'};
 			playerHUD=this.add.text(0, 0, 'Player life: 3', style);
 			playerHUD.fixedToCamera = true;
@@ -102,7 +104,6 @@ var actorMap;
 	    		var y=this.input.activePointer.worldY;
 				var dx=Math.abs(player.sprite.x-x);
 				var dy=Math.abs(player.sprite.y-y);
-				debugger;
 				if(dx>dy){
 					if(x>player.sprite.x){
 						this.onKeyUp({keyCode:Phaser.Keyboard.RIGHT});
@@ -138,6 +139,8 @@ var actorMap;
 			}
 
 			if (acted){
+				Map.computeLight();
+				
 				var enemy;
 
 				// i=1, skip the player
@@ -152,16 +155,73 @@ var actorMap;
 	var Map={
 		tiles:null,
 		rotmap:null,
-		initMap: function(rotmap){
+		phaserMap:null,
+		lightDict:{},
+		initMap: function(rotmap, phaserMap){
 			this.rotmap=rotmap;
+			this.phaserMap=phaserMap;
 			this.tiles=JSON.parse(JSON.stringify(rotmap.map));
+
 		},
 		canGo:function (actor,dir) {
 			return  actor.x+dir.x >= 0 &&
-				actor.x+dir.x <= COLS - 1 &&
+				actor.x+dir.x < COLS &&
 				actor.y+dir.y >= 0 &&
-				actor.y+dir.y <= ROWS - 1 &&
+				actor.y+dir.y < ROWS  &&
 				Map.tiles[actor.x +dir.x][actor.y+dir.y] === 0;
+		},
+		light:function(){
+			/* input callback */
+			var lightPasses = function(x, y) {
+			    return typeof Map.tiles[x] !=='undefined' && typeof Map.tiles[x][y] !=='undefined' &&	Map.tiles[x][y] === 0;
+			};
+
+			this.resetLight();
+
+			this.fov = new ROT.FOV.PreciseShadowcasting(lightPasses);
+			this.computeLight();
+		},
+		resetLight:function(){
+			var tile, x, y;
+			for(x=0;x<COLS;x++){
+				for(y=0;y<ROWS;y++){
+					tile=Map.phaserMap.getTile(x,y,0);
+					if(tile && tile.alpha!==0){
+						tile.alpha=0;
+					}
+					tile=Map.phaserMap.getTile(x,y,1);
+					if(tile && tile.alpha!==0){
+						tile.alpha=0;
+					}
+				}
+			}
+		},
+		computeLight:function(){
+			this.resetLight();
+			
+			actorList.map(function(a){
+				a.sprite.alpha=0;
+			});
+			actorList[0].sprite.alpha=1;
+			this.fov.compute(actorList[0].x, actorList[0].y, 10, function(x, y, r, visibility) {
+				/*if(r==4){
+					visibility=0.5;
+				}else if(r==5){
+					visibility=0.25;
+				}*/
+				var tile=Map.phaserMap.getTile(x,y,0);
+				if(tile){
+					tile.alpha=visibility;
+				}
+				tile=Map.phaserMap.getTile(x,y,1);
+				if(tile){
+					tile.alpha=visibility;
+				}
+				if(actorMap.hasOwnProperty(x+'_'+y)){
+					actorMap[x+'_'+y].sprite.alpha=visibility;
+				}
+			
+			});
 		}
 	};
 
