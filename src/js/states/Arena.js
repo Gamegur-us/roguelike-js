@@ -173,7 +173,7 @@ var actorMap;
 		light:function(){
 			/* input callback */
 			var lightPasses = function(x, y) {
-			    return typeof Map.tiles[x] !=='undefined' && typeof Map.tiles[x][y] !=='undefined' &&	Map.tiles[x][y] === 0;
+			    return typeof Map.tiles[x] ==='undefined' || typeof Map.tiles[x][y] ==='undefined' || Map.tiles[x][y] === 0;
 			};
 
 			this.resetLight();
@@ -199,7 +199,7 @@ var actorMap;
 		computeLight:function(){
 			this.resetLight();
 			
-			actorList.map(function(a){
+			actorList.forEach(function(a){
 				a.sprite.alpha=0;
 			});
 			actorList[0].sprite.alpha=1;
@@ -220,8 +220,10 @@ var actorMap;
 				if(actorMap.hasOwnProperty(x+'_'+y)){
 					actorMap[x+'_'+y].sprite.alpha=visibility;
 				}
-			
 			});
+			
+			Map.phaserMap.layers[0].dirty=true;
+			Map.phaserMap.layers[1].dirty=true;
 		}
 	};
 
