@@ -20,7 +20,6 @@ var playerHUD;
 // points to each actor in its position, for quick searching
 var actorMap;
 
-
 (function(){
 	GameCtrl.Arena = function () {
 
@@ -53,6 +52,7 @@ var actorMap;
 			this.game.stage.backgroundColor='#2e203c';
 			this.cursors=game.input.keyboard.createCursorKeys();
 
+			HUD.game=this;
 			
 //			ROT.RNG.setSeed(124);
 
@@ -84,7 +84,7 @@ var actorMap;
 			Map.light();
 
 			var style = { font: '16px monospace', fill:'#fff'};
-			playerHUD=this.add.text(0, 0, 'Player life: 3', style);
+			playerHUD=this.add.text(0, 0, 'Player life: '+actorList[0].hp, style);
 			playerHUD.fixedToCamera = true;
     		playerHUD.cameraOffset.setTo(500, 50);
 
@@ -157,6 +157,9 @@ var actorMap;
 		rotmap:null,
 		phaserMap:null,
 		lightDict:{},
+		exist:function(x,y){
+			return (typeof this.rotmap.map[x] !== 'undefined' && typeof this.rotmap.map[x][y]!== 'undefined' && this.rotmap.map[x][y]===0)? '1':'0';
+		},
 		initMap: function(rotmap, phaserMap){
 			this.rotmap=rotmap;
 			this.phaserMap=phaserMap;
@@ -185,14 +188,24 @@ var actorMap;
 			var tile, x, y;
 			for(x=0;x<COLS;x++){
 				for(y=0;y<ROWS;y++){
+					/* todo fix para que los sprites de decoracion
+					/ del bosque se vean
+					var pos=Map.exist(x,y)==='0';
+					if(tile && pos ){
+						tile.alpha=1;
+					}*/
+
 					tile=Map.phaserMap.getTile(x,y,0);
-					if(tile && tile.alpha!==0){
+					if(tile){
 						tile.alpha=0;
 					}
+
+					
 					tile=Map.phaserMap.getTile(x,y,1);
-					if(tile && tile.alpha!==0){
+					if(tile){
 						tile.alpha=0;
 					}
+								
 				}
 			}
 		},
@@ -221,7 +234,7 @@ var actorMap;
 					actorMap[x+'_'+y].sprite.alpha=visibility;
 				}
 			});
-			
+
 			Map.phaserMap.layers[0].dirty=true;
 			Map.phaserMap.layers[1].dirty=true;
 		}
@@ -256,8 +269,9 @@ var actorMap;
 			if(!actor.isPlayer && !victim.isPlayer){
 				return;
 			}
-
-			victim.hp--;
+			
+			var damage=diceRoll('d8+2').total
+			victim.hp-=damage;
 
 			var axis=(actor.x===victim.x)?'y':'x';
 
@@ -277,19 +291,15 @@ var actorMap;
 				game.camera.follow(actor.sprite);
 			}, this);
 
-			setTimeout(function(game,victim){
-				game.add.tween(victim.sprite).to( { x:'+10'},50, Phaser.Easing.Linear.None,true)
-				.to( { x:'-20'},50, Phaser.Easing.Linear.None,true)
-				.to( { x:'+20'},50, Phaser.Easing.Linear.None,true)
-				.to( { x:'-10'},50, Phaser.Easing.Linear.None,true);
-			},200,game,victim);
+			var color= victim.isPlayer ? null: '#fff';
+			HUD.msg(damage.toString(), victim.sprite,450, color);
 
 			if(victim.isPlayer){
 				playerHUD.setText('Player life: '+victim.hp);
 			}
 
 			// if it's dead remove its reference
-			if (victim.hp === 0) {
+			if (victim.hp <= 0) {
 				victim.sprite.kill();
 				delete actorMap[newKey];
 				actorList.splice(actorList.indexOf(victim), 1);
@@ -321,6 +331,7 @@ var actorMap;
 		this.x=x;
 		this.y=y;
 		this.isPlayer=null;
+		this.damage='d8+2';
 		if(game){
 			this.game=game;
 			this.sprite=game.add.sprite(x*32,y*32,keySprite);
@@ -344,16 +355,17 @@ var actorMap;
  
 	function Player(game,x,y){
 		Actor.call(this,game,x,y,'hero');
-		this.hp=3;
+		this.hp=30;
 		this.isPlayer=true;
-		
+		this.damage='d6+2';
 	}
 	Player.prototype = new Actor();
 
 	function Enemy(game,x,y){
 		Actor.call(this,game,x,y,'orc');
-		this.hp=1;
+		this.hp=10;
 		this.isPlayer=false;
+		this.damage='d4+2';
 	}
 	Enemy.prototype = new Actor();
 
@@ -459,6 +471,63 @@ var actorMap;
 		}
 		return array;
 	}
+
+	function diceRoll(data){
+		// data val sample '1d8+12'
+		// data val sample '4d8-10'
+		// data val sample 'd8+2'
+		data=' '+data;
+		var dataSplit=data.split(/-|\+|d/g);
+		var dices=parseInt(dataSplit[0],10);
+		if(!dices){
+			dices=1;
+		}
+		var sides=parseInt(dataSplit[1],10);
+		
+		var ret={ diceRoll:[], number:0, bonus:0 };
+		
+		ret.number=0;
+		var n;
+		for(var i=0;i<dices;i++){
+			n=1+Math.floor(Math.random() * sides);
+			ret.diceRoll.push(n);
+			ret.number+=n;
+		}
+		
+		
+		
+		if(dataSplit[2]){
+			ret.bonus=parseInt(dataSplit[2],10);
+			if(data.indexOf('-')>-1){
+				ret.bonus=ret.bonus*-1;
+			}
+		}
+
+		ret.total=ret.number+ret.bonus;
+
+		return ret;
+	}
+
+
+	var HUD={
+		game:null,
+		msg:function(text, sprite, speed, color){
+			var y=sprite.y-15;
+			var x=sprite.x+sprite.width/3;
+
+			color=(color)? color : '#ff0044';
+			
+			var style = { font: 'bold 19px Courier New, Courier', fill: color, align: 'center' };
+			text = this.game.add.text(x, y, text, style);
+			//text.position=sprite.position;
+			this.game.add.tween(text).to( { alpha: 1 }, Math.floor(speed*0.75), Phaser.Easing.Linear.None, true).to( { alpha: 0 /*,y:(-1*sprite.height/2).toString()*/ }, Math.floor(speed*0.25), Phaser.Easing.Linear.None, true);
+			setTimeout(function(t, _self){
+				_self.world.remove(t);
+			},speed, text, this.game);
+		}
+	};
+
+
 }());
 
 
