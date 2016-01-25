@@ -1,14 +1,12 @@
 /* global GameCtrl */
 
-(function(){
+(function () {
 	'use strict';
 
 	GameCtrl.Preloader = function () {
 		this.background = null;
 		this.preloadBar = null;
-
 		this.ready = false;
-
 	};
 
 	GameCtrl.Preloader.prototype = {
@@ -26,14 +24,14 @@
 
 			//	Here we load the rest of the assets our game needs.		
 			//this.load.image('stage01', 'assets/images/stage01.png');
-			
+
 			//  This is how you load an atlas
 			//this.load.atlas('playButton', 'assets/images/play_button.png', 'assets/images/play_button.json');
 
 			//  This is how you load fonts
 			//this.load.bitmapFont('caslon', 'assets/fonts/caslon.png', 'assets/fonts/caslon.xml');
-	
-	        this.load.image('forest-tiles', 'assets/images/foresttiles_0.png');
+
+			this.load.image('forest-tiles', 'assets/images/foresttiles_0.png');
 
 			this.load.spritesheet('forest-tiles', 'assets/images/foresttiles_0.png', 32, 32);
 			this.load.spritesheet('hero', 'assets/images/hero.png', 32, 32);
@@ -42,16 +40,12 @@
 		},
 
 		create: function () {
-
 			//	Once the load has finished we disable the crop because we're going to sit in the update loop for a short while as the music decodes
 			this.preloadBar.cropEnabled = false;
-
 		},
 
 		update: function () {
 			this.game.state.start('Arena');
 		}
-
 	};
-
 })();
